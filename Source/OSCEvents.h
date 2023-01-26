@@ -29,7 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define DEFAULT_PORT 27020
 #define DEFAULT_OSC_ADDRESS "/ttl"
-#define DEFAULT_IP_ADDRESS "localhost"
 
 #include "oscpack/osc/OscOutboundPacketStream.h"
 #include "oscpack/ip/IpEndpointName.h"
@@ -88,7 +87,7 @@ class OSCServer : public osc::OscPacketListener,
 public:
 
 	/** Constructor */
-	OSCServer(String ipAddress, int port, String address, OSCEventsNode* processor);
+	OSCServer(int port, String address, OSCEventsNode* processor);
 
 	/** Destructor*/
 	~OSCServer();
@@ -111,7 +110,6 @@ private:
 	/** Copy constructor */
 	OSCServer(OSCServer const &);
 
-	String m_ipAddress;
 	int m_incomingPort;
 	String m_oscAddress;
 
@@ -129,11 +127,11 @@ class OSCModule
 public:
 	
 	/** Constructor */
-	OSCModule(String ipAddress, int port, String address, OSCEventsNode* processor)
-		:m_ipAddress(ipAddress), m_port(port), m_address(address)
+	OSCModule(int port, String address, OSCEventsNode* processor)
+		:m_port(port), m_address(address)
 	{
 		m_messageQueue = std::make_unique<MessageQueue>();
-		m_server = std::make_unique<OSCServer>(ipAddress, port, address, processor);
+		m_server = std::make_unique<OSCServer>(port, address, processor);
 		if(m_server->isBound())
 			m_server->startThread();
 	}
@@ -145,7 +143,6 @@ public:
 
 	int m_port = DEFAULT_PORT;
 	String m_address = String(DEFAULT_OSC_ADDRESS);
-	String m_ipAddress = String(DEFAULT_IP_ADDRESS);
 
 	std::unique_ptr<MessageQueue> m_messageQueue;
 	std::unique_ptr<OSCServer> m_server;
@@ -213,9 +210,6 @@ public:
 	int getPort() const;
 	void setPort (int port);
 
-	String getIpAddress() const;
-	void setIpAddress (String address);
-
 	String getOscAddress() const;
 	void setOscAddress(String address);
 
@@ -234,7 +228,7 @@ private:
 
 	// Stimulation parameters
 	bool m_isOn = true;
-	int m_pulseDurationMs = 0;
+	int m_pulseDurationMs = 50;
 
 	std::unique_ptr<OSCModule> oscModule;
 

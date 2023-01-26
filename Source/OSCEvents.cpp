@@ -27,14 +27,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 OSCEventsNode::OSCEventsNode()
     : GenericProcessor("OSC Events")
 {
-    
-    addStringParameter(Parameter::GLOBAL_SCOPE, "IP", "IP Address", DEFAULT_IP_ADDRESS);
+
     addIntParameter(Parameter::GLOBAL_SCOPE, "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
     addIntParameter(Parameter::GLOBAL_SCOPE, "Duration", "TTL Pulse Duration (ms)", 50, 0, 5000);
     addStringParameter(Parameter::GLOBAL_SCOPE, "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
     addBooleanParameter(Parameter::GLOBAL_SCOPE, "StimOn", "Determines whether events should be generated", true);
-
-    // oscModule = std::make_unique<OSCModule>(DEFAULT_IP_ADDRESS, DEFAULT_PORT, DEFAULT_OSC_ADDRESS, this);
 
 }
 
@@ -52,33 +49,17 @@ int OSCEventsNode::getPort() const
 void OSCEventsNode::setPort(int port)
 {
     String oscAddress = getOscAddress();
-    String ipAddress = getIpAddress();
 
     oscModule.reset();
-    oscModule = std::make_unique<OSCModule>(ipAddress, port, oscAddress, this);
-}
-
-String OSCEventsNode::getIpAddress() const
-{
-    return oscModule->m_ipAddress;
-}
-
-void OSCEventsNode::setIpAddress(String address)
-{
-    String oscAddress = getOscAddress();
-    int port = getPort();
-
-    oscModule.reset();
-    oscModule = std::make_unique<OSCModule>(address, port, oscAddress, this);
+    oscModule = std::make_unique<OSCModule>(port, oscAddress, this);
 }
 
 void OSCEventsNode::setOscAddress (String address)
 {
-    String ipAddress = getIpAddress();
     int port = getPort();
     
     oscModule.reset();
-    oscModule = std::make_unique<OSCModule>(ipAddress, port, address, this);
+    oscModule = std::make_unique<OSCModule>(port, address, this);
 }
 
 String OSCEventsNode::getOscAddress() const
@@ -115,11 +96,6 @@ void OSCEventsNode::parameterValueChanged(Parameter *param)
     {
         int port = static_cast<IntParameter*>(param)->getIntValue();
         setPort(port);
-    }
-    else if(param->getName().equalsIgnoreCase("IP"))
-    {
-        String address = param->getValueAsString();
-        setIpAddress( address);
     }
     else if(param->getName().equalsIgnoreCase("Address"))
     {
@@ -169,12 +145,11 @@ void OSCEventsNode::updateSettings()
     }
 
     int port = static_cast<IntParameter*>(getParameter("Port"))->getIntValue();
-    String ipAddr = getParameter("IP")->getValueAsString();
     String address = getParameter("Address")->getValueAsString();
     
     while(oscModule == nullptr)
     {
-        oscModule = std::make_unique<OSCModule>(ipAddr, port, address, this);
+        oscModule = std::make_unique<OSCModule>(port, address, this);
 
         if(!oscModule->m_server->isBound())
         {
@@ -357,23 +332,21 @@ int MessageQueue::count()
 
 
 
-OSCServer::OSCServer(String ipAddress, 
-    int port, 
+OSCServer::OSCServer(int port, 
     String address, 
     OSCEventsNode *processor)
     : Thread("OscListener Thread"),
-       m_ipAddress(ipAddress),
        m_incomingPort(port), 
        m_oscAddress(address),
        m_processor(processor),
        m_listeningSocket(nullptr)
 {
-    LOGC("Creating OSC server - IP:", ipAddress , " Port:", port, " Address:", address);
+    LOGC("Creating OSC server - Port:", port, " Address:", address);
 
     try
     {
         m_listeningSocket = new UdpListeningReceiveSocket(
-            IpEndpointName(m_ipAddress.getCharPointer(), m_incomingPort),
+            IpEndpointName(IpEndpointName::ANY_ADDRESS, m_incomingPort),
             this);
 
         CoreServices::sendStatusMessage("OSC Server ready!");

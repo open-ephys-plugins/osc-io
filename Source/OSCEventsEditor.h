@@ -45,6 +45,9 @@ private:
 	std::unique_ptr<TextButton> stimulationToggleButton;
 	std::unique_ptr<Label> stimLabel;
 
+	std::unique_ptr<Label> ipLabel;
+	std::unique_ptr<TextEditor> ipAddrLabel;
+
 	/** Called by processor when parameters change */
 	//void updateCustomView();
 

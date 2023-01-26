@@ -28,20 +28,36 @@ OSCEventsEditor::OSCEventsEditor(GenericProcessor *parentNode)
 {
     desiredWidth = 250;
 
-    addTextBoxParameterEditor("IP", 15, 25);
-    addTextBoxParameterEditor("Port", 110, 25);
+    ipLabel = std::make_unique<Label>("IP Label", "IP");
+    ipLabel->setFont(Font("Silkscreen", "Regular", 12.0f));
+    ipLabel->setColour(Label::textColourId, Colours::darkgrey);
+    ipLabel->setBounds(15, 25, 40, 20);
+    addAndMakeVisible(ipLabel.get());
+
+    ipAddrLabel = std::make_unique<TextEditor>("IP Address");
+    ipAddrLabel->setText(IPAddress::getLocalAddress().toString(), false);
+    ipAddrLabel->setReadOnly(true);
+    ipAddrLabel->setCaretVisible(false);
+    ipAddrLabel->setTooltip("This machine's assigned address. Use this in your OSC sender client.");
+    ipAddrLabel->applyFontToAllText(Font("CP Mono", "Plain", 15.0f));
+    ipAddrLabel->applyColourToAllText(Colours::lightgrey);
+    ipAddrLabel->setColour(TextEditor::backgroundColourId, Colours::grey);
+    ipAddrLabel->setBounds(15, 45, 115, 18);
+    addAndMakeVisible(ipAddrLabel.get());
+
+    addTextBoxParameterEditor("Port", 145, 25);
     addTextBoxParameterEditor("Address", 15, 75);
-    addTextBoxParameterEditor("Duration", 110, 75);
+    addTextBoxParameterEditor("Duration", 105, 75);
     
      // Stimulate (toggle)
     stimLabel = std::make_unique<Label>("Stim Label", "STIM");
     stimLabel->setFont(Font("Silkscreen", "Bold", 12.0f));
     stimLabel->setColour(Label::textColourId, Colours::darkgrey);
-    stimLabel->setBounds(205, 50, 40, 20);
+    stimLabel->setBounds(200, 75, 40, 20);
     addAndMakeVisible(stimLabel.get());
 
     stimulationToggleButton = std::make_unique<TextButton>("Stimulate Button");
-    stimulationToggleButton->setBounds(205, 72, 40, 20);
+    stimulationToggleButton->setBounds(200, 95, 40, 18);
     stimulationToggleButton->addListener(this);
     stimulationToggleButton->setClickingTogglesState(true); // makes the button toggle its state when clicked
     stimulationToggleButton->setButtonText("ON");
