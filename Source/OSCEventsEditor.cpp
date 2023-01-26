@@ -28,20 +28,20 @@ OSCEventsEditor::OSCEventsEditor(GenericProcessor *parentNode)
 {
     desiredWidth = 250;
 
-    addTextBoxParameterEditor("IP", 10, 25);
-    addTextBoxParameterEditor("Port", 165, 25);
-    addTextBoxParameterEditor("Address", 165, 75);
-    addTextBoxParameterEditor("Duration_ms", 65, 75);
+    addTextBoxParameterEditor("IP", 15, 25);
+    addTextBoxParameterEditor("Port", 110, 25);
+    addTextBoxParameterEditor("Address", 15, 75);
+    addTextBoxParameterEditor("Duration", 110, 75);
     
      // Stimulate (toggle)
     stimLabel = std::make_unique<Label>("Stim Label", "STIM");
     stimLabel->setFont(Font("Silkscreen", "Bold", 12.0f));
     stimLabel->setColour(Label::textColourId, Colours::darkgrey);
-    stimLabel->setBounds(15, 72, 40, 20);
+    stimLabel->setBounds(205, 50, 40, 20);
     addAndMakeVisible(stimLabel.get());
 
     stimulationToggleButton = std::make_unique<TextButton>("Stimulate Button");
-    stimulationToggleButton->setBounds(15, 92, 40, 20);
+    stimulationToggleButton->setBounds(205, 72, 40, 20);
     stimulationToggleButton->addListener(this);
     stimulationToggleButton->setClickingTogglesState(true); // makes the button toggle its state when clicked
     stimulationToggleButton->setButtonText("ON");

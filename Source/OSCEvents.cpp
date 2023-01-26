@@ -30,7 +30,7 @@ OSCEventsNode::OSCEventsNode()
     
     addStringParameter(Parameter::GLOBAL_SCOPE, "IP", "IP Address", DEFAULT_IP_ADDRESS);
     addIntParameter(Parameter::GLOBAL_SCOPE, "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
-    addIntParameter(Parameter::GLOBAL_SCOPE, "Duration_ms", "TTL Pulse Duration", 0, 0, 5000);
+    addIntParameter(Parameter::GLOBAL_SCOPE, "Duration", "TTL Pulse Duration (ms)", 50, 0, 5000);
     addStringParameter(Parameter::GLOBAL_SCOPE, "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
     addBooleanParameter(Parameter::GLOBAL_SCOPE, "StimOn", "Determines whether events should be generated", true);
 
@@ -126,22 +126,22 @@ void OSCEventsNode::parameterValueChanged(Parameter *param)
         String address = param->getValueAsString();
         setOscAddress( address);
     }
-    else if (param->getName().equalsIgnoreCase("Duration_ms"))
+    else if (param->getName().equalsIgnoreCase("Duration"))
     {
         int duration = static_cast<IntParameter*>(param)->getIntValue();
         setTTLDuration(duration);
     }
     else if (param->getName().equalsIgnoreCase("StimOn"))
     {
-		bool isOn = static_cast<BooleanParameter*>(param)->getBoolValue();
-		if (isOn)
-		{
-			startStimulation();
-		}
-		else
-		{
-			stopStimulation();
-		}
+        bool isOn = static_cast<BooleanParameter*>(param)->getBoolValue();
+        if (isOn)
+        {
+            startStimulation();
+        }
+        else
+        {
+            stopStimulation();
+        }
     }
 }
 
@@ -188,7 +188,7 @@ void OSCEventsNode::triggerEvent(int ttlLine, bool state)
                                                      ttlLine,
                                                      state);
 
-        std::cout << "Adding on event at " << startSampleNum << std::endl;
+        LOGD("Adding on event at ", startSampleNum);
         
         addEvent(event, 0);
 
@@ -215,7 +215,7 @@ void OSCEventsNode::triggerEvent(int ttlLine, bool state)
                 
             else
             {
-                std::cout << "Adding off event at " << eventOff->getSampleNumber() << std::endl;
+                LOGD("Adding off event at ", eventOff->getSampleNumber());
                 settings[stream->getStreamId()]->turnoffEvent = eventOff;
             }
                 
@@ -258,7 +258,7 @@ void OSCEventsNode::process(AudioBuffer<float>& buffer)
     {
         MessageData msg = oscModule->m_messageQueue->pop();
 
-        std::cout << "Triggering event for message" << std::endl;
+        LOGD("Triggering event for message");
         
         triggerEvent(msg.ttlLine, msg.state);
     }
@@ -272,7 +272,7 @@ void OSCEventsNode::receiveMessage(const MessageData &message)
 
     lock.enter();
 
-    std::cout << "Pushing message to queue" << std::endl;
+    LOGD("Pushing message to queue");
 
     oscModule->m_messageQueue->push(message);
    
@@ -368,14 +368,14 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
     const IpEndpointName&)
 {
 
-    std::cout << "Message received on " << receivedMessage.AddressPattern() << std::endl;
+    LOGD("Message received on ", receivedMessage.AddressPattern());
 
     try
     {
 
 		if (String(receivedMessage.AddressPattern()).equalsIgnoreCase(m_oscAddress))
 		{
-            std::cout << "Num arguments: " << receivedMessage.ArgumentCount() << std::endl;
+            LOGD("Num arguments: ", receivedMessage.ArgumentCount());
 
             osc::ReceivedMessageArgumentStream args = receivedMessage.ArgumentStream();
 
@@ -388,8 +388,8 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
             if (receivedMessage.ArgumentCount() > 1)
                 args >> state;
 
-            std::cout << "TTL Line: " << ttlLine << std::endl;
-            std::cout << "TTL State: " << state << std::endl;
+            LOGD("TTL Line: ", ttlLine);
+            LOGD("TTL State: ", state);
 
             if (ttlLine >= 0)
             {
@@ -407,7 +407,7 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
     {
         // any parsing errors such as unexpected argument types, or
         // missing arguments get thrown as exceptions.
-        LOGC("error while parsing message: ", String(receivedMessage.AddressPattern()), ": ", String(e.what()));
+        LOGE("error while parsing message: ", String(receivedMessage.AddressPattern()), ": ", String(e.what()));
     }
 }
 
@@ -424,7 +424,7 @@ void OSCServer::run()
     }
     catch (const std::exception &e)
     {
-        LOGC("Exception in OSCServer::run(): ", String(e.what()));
+        LOGE("Exception in OSCServer::run(): ", String(e.what()));
     }
 }
 
