@@ -113,7 +113,7 @@ private:
 	int m_incomingPort;
 	String m_oscAddress;
 
-	UdpListeningReceiveSocket *m_listeningSocket;
+	std::unique_ptr<UdpListeningReceiveSocket> m_listeningSocket;
 	OSCEventsNode* m_processor;
 };
 
@@ -201,6 +201,8 @@ public:
 	/** Load custom settings from XML. This method is not needed to load the state of
 		Parameter objects*/
 	void loadCustomParametersFromXml(XmlElement *parentElement) override;
+
+	bool startAcquisition() override;
 
 	// receives a message from the osc server
 	void receiveMessage(const MessageData &message);

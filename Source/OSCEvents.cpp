@@ -144,6 +144,9 @@ void OSCEventsNode::updateSettings()
         settings[stream->getStreamId()]->eventChannelPtr = eventChannels.getLast();
     }
 
+    parameterValueChanged(getParameter("Duration"));
+    parameterValueChanged(getParameter("StimOn"));
+
     int port = static_cast<IntParameter*>(getParameter("Port"))->getIntValue();
     String address = getParameter("Address")->getValueAsString();
     
@@ -261,6 +264,19 @@ void OSCEventsNode::process(AudioBuffer<float>& buffer)
    
 }
 
+bool OSCEventsNode::startAcquisition()
+{
+    LOGC("[OSC Events] Clearing message queue before starting acquisition")
+
+    lock.enter();
+    oscModule->m_messageQueue->clear();
+    lock.exit();
+
+    LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
+
+    return true;
+}
+
 void OSCEventsNode::receiveMessage(const MessageData &message)
 {
 
@@ -268,7 +284,10 @@ void OSCEventsNode::receiveMessage(const MessageData &message)
 
     LOGD("Pushing message to queue");
 
-    oscModule->m_messageQueue->push(message);
+    if(CoreServices::getAcquisitionStatus())
+        oscModule->m_messageQueue->push(message);
+
+    LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
    
     lock.exit();
 }
@@ -338,14 +357,13 @@ OSCServer::OSCServer(int port,
     : Thread("OscListener Thread"),
        m_incomingPort(port), 
        m_oscAddress(address),
-       m_processor(processor),
-       m_listeningSocket(nullptr)
+       m_processor(processor)
 {
     LOGC("Creating OSC server - Port:", port, " Address:", address);
 
     try
     {
-        m_listeningSocket = new UdpListeningReceiveSocket(
+        m_listeningSocket = std::make_unique<UdpListeningReceiveSocket>(
             IpEndpointName(IpEndpointName::ANY_ADDRESS, m_incomingPort),
             this);
 
@@ -366,9 +384,7 @@ OSCServer::~OSCServer()
     // stop the OSC Listener thread running
     stop();
     stopThread(-1);
-
-    if(m_listeningSocket)
-        delete m_listeningSocket;
+    waitForThreadToExit(-1);
 }
 
 void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
@@ -420,20 +436,13 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
 
 void OSCServer::run()
 {
-    sleep(100);
+    sleep(1000);
     
     // Start the oscpack OSC Listener Thread
+    // TODO (FIX): Hits assertion in the JUCE::Thread class because listener's
+    // 'Run()' method is throwing expection in some cases.
     if(m_listeningSocket)
-    {
-        try
-        {
             m_listeningSocket->Run();
-        }
-        catch (const std::exception &e)
-        {
-            LOGE("Exception in OSCServer::run(): ", String(e.what()));
-        }
-    }
 }
 
 bool OSCServer::isBound()

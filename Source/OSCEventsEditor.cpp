@@ -86,33 +86,20 @@ void OSCEventsEditor::buttonClicked(Button *btn)
     }
 }
 
-/*void OSCEventsEditor::updateCustomView()
+void OSCEventsEditor::updateSettings()
 {
     OSCEventsNode *processor = (OSCEventsNode *)getProcessor();
 
-    auto portParam = processor->getParameter("Port");
-    int port = processor->getPort();
+    bool isOn = processor->getParameter("StimOn")->getValue();
 
-    if(port == 0)
-        port = DEFAULT_PORT;
-
-    portParam->currentValue = port;
-
-    auto addressParam = processor->getParameter("Address");
-    String addr = processor->getOscAddress();
-
-    if(addr.isEmpty())
-        addr = DEFAULT_OSC_ADDRESS;
-
-    addressParam->currentValue = addr;
-
-    auto ipAddressParam = processor->getParameter("Address");
-    addr = processor->getIpAddress();
-
-    if (addr.isEmpty())
-        addr = DEFAULT_OSC_ADDRESS;
-
-    ipAddressParam->currentValue = addr;
-
-    updateView();
-}*/
+    if(isOn)
+    {
+        stimulationToggleButton->setToggleState(true, dontSendNotification);
+        stimulationToggleButton->setButtonText(String("ON"));
+    }
+    else
+    {
+        stimulationToggleButton->setToggleState(false, dontSendNotification);
+        stimulationToggleButton->setButtonText(String("OFF"));
+    }
+}

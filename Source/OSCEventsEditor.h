@@ -40,6 +40,9 @@ public:
 	/** Button listener*/
 	void buttonClicked(Button* button) override;
 
+	/** Update editor settings */
+	void updateSettings() override;
+
 private:
 
 	std::unique_ptr<TextButton> stimulationToggleButton;
@@ -47,9 +50,6 @@ private:
 
 	std::unique_ptr<Label> ipLabel;
 	std::unique_ptr<TextEditor> ipAddrLabel;
-
-	/** Called by processor when parameters change */
-	//void updateCustomView();
 
 	/** Generates an assertion if this class leaks */
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OSCEventsEditor);
