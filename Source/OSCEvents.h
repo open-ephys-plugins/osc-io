@@ -99,6 +99,9 @@ public:
 	/** Stop listening */
 	void stop();
 
+	/** Check if server was bound successfully*/
+	bool isBound();
+
 protected:
 	/** OscPacketListener method*/
 	virtual void ProcessMessage(const osc::ReceivedMessage &m, const IpEndpointName &);
@@ -131,7 +134,8 @@ public:
 	{
 		m_messageQueue = std::make_unique<MessageQueue>();
 		m_server = std::make_unique<OSCServer>(ipAddress, port, address, processor);
-		m_server->startThread();
+		if(m_server->isBound())
+			m_server->startThread();
 	}
 
 	/** Destructor */

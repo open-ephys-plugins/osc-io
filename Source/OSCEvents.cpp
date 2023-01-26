@@ -34,7 +34,7 @@ OSCEventsNode::OSCEventsNode()
     addStringParameter(Parameter::GLOBAL_SCOPE, "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
     addBooleanParameter(Parameter::GLOBAL_SCOPE, "StimOn", "Determines whether events should be generated", true);
 
-    oscModule = std::make_unique<OSCModule>(DEFAULT_IP_ADDRESS, DEFAULT_PORT, DEFAULT_OSC_ADDRESS, this);
+    // oscModule = std::make_unique<OSCModule>(DEFAULT_IP_ADDRESS, DEFAULT_PORT, DEFAULT_OSC_ADDRESS, this);
 
 }
 
@@ -167,6 +167,25 @@ void OSCEventsNode::updateSettings()
         eventChannels.getLast()->addProcessor(processorInfo.get());
         settings[stream->getStreamId()]->eventChannelPtr = eventChannels.getLast();
     }
+
+    int port = static_cast<IntParameter*>(getParameter("Port"))->getIntValue();
+    String ipAddr = getParameter("IP")->getValueAsString();
+    String address = getParameter("Address")->getValueAsString();
+    
+    while(oscModule == nullptr)
+    {
+        oscModule = std::make_unique<OSCModule>(ipAddr, port, address, this);
+
+        if(!oscModule->m_server->isBound())
+        {
+            LOGC("Tyring new port:", port + 1);
+            oscModule.reset();
+            port++;
+        }
+    }
+
+    getParameter("Port")->currentValue = oscModule->m_port;
+    getEditor()->updateView();
 }
 
 void OSCEventsNode::triggerEvent(int ttlLine, bool state)
@@ -346,13 +365,27 @@ OSCServer::OSCServer(String ipAddress,
        m_ipAddress(ipAddress),
        m_incomingPort(port), 
        m_oscAddress(address),
-       m_processor(processor)
+       m_processor(processor),
+       m_listeningSocket(nullptr)
 {
-    m_listeningSocket = new UdpListeningReceiveSocket(
-        IpEndpointName(m_ipAddress.getCharPointer(), m_incomingPort),
-        this);
+    LOGC("Creating OSC server - IP:", ipAddress , " Port:", port, " Address:", address);
 
-    startThread();
+    try
+    {
+        m_listeningSocket = new UdpListeningReceiveSocket(
+            IpEndpointName(m_ipAddress.getCharPointer(), m_incomingPort),
+            this);
+
+        CoreServices::sendStatusMessage("OSC Server ready!");
+        LOGC("OSC Server started!");
+    }
+    catch (const std::exception &e)
+    {
+        CoreServices::sendStatusMessage("OSC Server failed to start!");
+        LOGE("Exception in creating OSC Server: ", String(e.what()));
+    }
+
+    // startThread();
 }
 
 OSCServer::~OSCServer()
@@ -360,8 +393,9 @@ OSCServer::~OSCServer()
     // stop the OSC Listener thread running
     stop();
     stopThread(-1);
-    waitForThreadToExit(-1);
-    delete m_listeningSocket;
+
+    if(m_listeningSocket)
+        delete m_listeningSocket;
 }
 
 void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
@@ -416,16 +450,25 @@ void OSCServer::run()
     sleep(100);
     
     // Start the oscpack OSC Listener Thread
-    try
+    if(m_listeningSocket)
     {
-        m_listeningSocket->Run();
-        CoreServices::sendStatusMessage("OSC Server running");
-		LOGC("OSC Server running");
+        try
+        {
+            m_listeningSocket->Run();
+        }
+        catch (const std::exception &e)
+        {
+            LOGE("Exception in OSCServer::run(): ", String(e.what()));
+        }
     }
-    catch (const std::exception &e)
-    {
-        LOGE("Exception in OSCServer::run(): ", String(e.what()));
-    }
+}
+
+bool OSCServer::isBound()
+{
+    if(m_listeningSocket)
+        return m_listeningSocket->IsBound();
+    else
+        return false;
 }
 
 void OSCServer::stop()
@@ -436,6 +479,7 @@ void OSCServer::stop()
         return;
     }
 
-    m_listeningSocket->AsynchronousBreak();
+    if(m_listeningSocket)
+        m_listeningSocket->AsynchronousBreak();
 }
 
