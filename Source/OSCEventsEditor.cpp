@@ -42,10 +42,10 @@ OSCEventsEditor::OSCEventsEditor(GenericProcessor *parentNode)
     ipAddrLabel->applyFontToAllText(Font("CP Mono", "Plain", 15.0f));
     ipAddrLabel->applyColourToAllText(Colours::lightgrey);
     ipAddrLabel->setColour(TextEditor::backgroundColourId, Colours::grey);
-    ipAddrLabel->setBounds(15, 45, 115, 18);
+    ipAddrLabel->setBounds(15, 45, 132, 18);
     addAndMakeVisible(ipAddrLabel.get());
 
-    addTextBoxParameterEditor("Port", 145, 25);
+    addTextBoxParameterEditor("Port", 160, 25);
     addTextBoxParameterEditor("Address", 15, 75);
     addTextBoxParameterEditor("Duration", 105, 75);
     
@@ -53,7 +53,7 @@ OSCEventsEditor::OSCEventsEditor(GenericProcessor *parentNode)
     stimLabel = std::make_unique<Label>("Stim Label", "STIM");
     stimLabel->setFont(Font("Silkscreen", "Bold", 12.0f));
     stimLabel->setColour(Label::textColourId, Colours::darkgrey);
-    stimLabel->setBounds(200, 75, 40, 20);
+    stimLabel->setBounds(198, 75, 40, 20);
     addAndMakeVisible(stimLabel.get());
 
     stimulationToggleButton = std::make_unique<TextButton>("Stimulate Button");
