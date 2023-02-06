@@ -1,14 +1,16 @@
 # OSC I/O
 
+![osc-io-screenshot](https://open-ephys.github.io/gui-docs/_images/oscevents-01.png)
+
 Triggers TTL events on incoming OSC messages. *Coming eventually:* Output TTL events as OSC messages.
 
 ## Installation
 
-This plugin can be added via the Open Ephys GUI's built-in Plugin Installer. Press **ctrl-P** or **⌘P** to open the Plugin Installer, browse to the "OSC Events" plugin, and click the "Install" button. The OSC Events plugin should now be available to use.
+This plugin can be added via the Open Ephys GUI's built-in Plugin Installer. Press **ctrl-P** or **⌘P** to open the Plugin Installer, browse to the "OSC IO" plugin, and click the "Install" button. The OSC Events plugin should now be available to use.
 
 ## Usage
 
-Documentation related to the OSC Events user interface and remote commands will be available soon on the GUI's main documentation website.
+Instructions for using the OSC IO Plugin are available [here](https://open-ephys.github.io/gui-docs/User-Manual/Plugins/OSC-Events.html.
 
 
 ## Building from source
@@ -53,8 +55,6 @@ From the `Build` directory, enter:
 
 ```bash
 cmake -G "Unix Makefiles" ..
-cd Debug
-make -j
 make install
 ```
 
@@ -79,4 +79,4 @@ Running the `ALL_BUILD` scheme will compile the plugin; running the `INSTALL` sc
 
 ## Attribution
 
-This plugin is based on the Tracking Plugin (developed by )
+This plugin was collaboratively developed by Gonçalo Lopes, Josh Siegle and Anjal Doshi.
