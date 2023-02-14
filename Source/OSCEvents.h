@@ -194,14 +194,6 @@ public:
 		Visualizer plugins typically use this method to send data to the canvas for display purposes */
 	void process(AudioBuffer<float> &buffer) override;
 
-	/** Saving custom settings to XML. This method is not needed to save the state of
-		Parameter objects */
-	void saveCustomParametersToXml(XmlElement *parentElement) override;
-
-	/** Load custom settings from XML. This method is not needed to load the state of
-		Parameter objects*/
-	void loadCustomParametersFromXml(XmlElement *parentElement) override;
-
 	bool startAcquisition() override;
 
 	// receives a message from the osc server

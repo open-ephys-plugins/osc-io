@@ -43,28 +43,59 @@ AudioProcessorEditor *OSCEventsNode::createEditor()
 
 int OSCEventsNode::getPort() const
 {
-    return oscModule->m_port;
+    if(oscModule)
+        return oscModule->m_port;
+    else
+        return DEFAULT_PORT;
 }
 
 void OSCEventsNode::setPort(int port)
 {
     String oscAddress = getOscAddress();
 
-    oscModule.reset();
-    oscModule = std::make_unique<OSCModule>(port, oscAddress, this);
+    if(getPort() != port)
+    {
+        oscModule.reset(nullptr);
+        
+        oscModule = std::make_unique<OSCModule>(port, oscAddress, this);
+
+        if(!oscModule->m_server->isBound())
+        {
+            oscModule.reset(nullptr);
+            AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon,
+                                             "OSC Events [" + (String)getNodeId() + "]",
+                                             "Unable to bind to port: " + (String)port
+                                             + "\nPlease try a different one!");
+        }
+    }
 }
 
 void OSCEventsNode::setOscAddress (String address)
 {
     int port = getPort();
     
-    oscModule.reset();
-    oscModule = std::make_unique<OSCModule>(port, address, this);
+    if(!getOscAddress().equalsIgnoreCase(address))
+    {
+        oscModule.reset(nullptr);
+        
+        oscModule = std::make_unique<OSCModule>(port, address, this);
+        if(!oscModule->m_server->isBound())
+        {
+            oscModule.reset(nullptr);
+            AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon,
+                                             "OSC Events [" + (String)getNodeId() + "]",
+                                             "Unable to bind to port: " + (String)port
+                                             + "\nPlease try a different one!");
+        }
+    }
 }
 
 String OSCEventsNode::getOscAddress() const
 {
-    return oscModule->m_address;
+    if(oscModule)
+        return oscModule->m_address;
+    else
+        return DEFAULT_OSC_ADDRESS;
 }
 
 void OSCEventsNode::startStimulation()
@@ -157,7 +188,7 @@ void OSCEventsNode::updateSettings()
         if(!oscModule->m_server->isBound())
         {
             LOGC("Tyring new port:", port + 1);
-            oscModule.reset();
+            oscModule.reset(nullptr);
             port++;
         }
     }
@@ -225,7 +256,7 @@ void OSCEventsNode::triggerEvent(int ttlLine, bool state)
 void OSCEventsNode::process(AudioBuffer<float>& buffer)
 {
 
-    if (!m_isOn)
+    if (!m_isOn || !oscModule)
         return;
 
     // turn off event from previous buffer if necessary
@@ -266,13 +297,16 @@ void OSCEventsNode::process(AudioBuffer<float>& buffer)
 
 bool OSCEventsNode::startAcquisition()
 {
-    LOGC("[OSC Events] Clearing message queue before starting acquisition")
+    if(oscModule)
+    {
+        LOGC("[OSC Events] Clearing message queue before starting acquisition")
 
-    lock.enter();
-    oscModule->m_messageQueue->clear();
-    lock.exit();
+        lock.enter();
+        oscModule->m_messageQueue->clear();
+        lock.exit();
 
-    LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
+        LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
+    }
 
     return true;
 }
@@ -290,37 +324,6 @@ void OSCEventsNode::receiveMessage(const MessageData &message)
     LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
    
     lock.exit();
-}
-
-
-// TODO: Both I/O methods need finishing
-void OSCEventsNode::saveCustomParametersToXml(XmlElement *parentElement)
-{
-    // for (auto stream : getDataStreams())
-    // {
-    //     auto *moduleXml = parentElement->createNewChildElement("Tracking_Node");
-    //     OSCEventsNodeSettings *module = settings[stream->getStreamId()];
-    //     for (auto tracker : module->trackers) {
-    //         moduleXml->setAttribute("Name", tracker->m_name);
-    //         moduleXml->setAttribute("Port", tracker->m_port);
-    //         moduleXml->setAttribute("Address", tracker->m_address);
-    //     }
-    // }
-}
-
-void OSCEventsNode::loadCustomParametersFromXml(XmlElement *xml)
-{
-    // for (auto *moduleXml : xml->getChildIterator())
-    // {
-    //     if (moduleXml->hasTagName("Tracking_Node"))
-    //     {
-    //         String name = moduleXml->getStringAttribute("Name", "Tracking source 1");
-    //         String address = moduleXml->getStringAttribute("Address", "/red");
-    //         String port = moduleXml->getStringAttribute("Port", "27020");
-
-    //         addTracker(name, port, address);
-    //     }
-    // }
 }
 
 
@@ -435,11 +438,9 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
 }
 
 void OSCServer::run()
-{
-    sleep(1000);
-    
+{    
     // Start the oscpack OSC Listener Thread
-    // TODO (FIX): Hits assertion in the JUCE::Thread class because listener's
+    // TODO (FIX): Hits assertion in the JUCE::Thread class bec6ause listener's
     // 'Run()' method is throwing expection in some cases.
     if(m_listeningSocket)
             m_listeningSocket->Run();
