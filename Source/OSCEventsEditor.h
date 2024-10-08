@@ -27,8 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <VisualizerEditorHeaders.h>
 
-class OSCEventsEditor : public GenericEditor,
-						public Button::Listener
+class OSCEventsEditor : public GenericEditor
 {
 public:
 	/** Constructor */
@@ -37,17 +36,7 @@ public:
 	/** Destructor */
 	~OSCEventsEditor() {}
 
-	/** Button listener*/
-	void buttonClicked(Button* button) override;
-
-	/** Update editor settings */
-	void updateSettings() override;
-
 private:
-
-	std::unique_ptr<TextButton> stimulationToggleButton;
-	std::unique_ptr<Label> stimLabel;
-
 	std::unique_ptr<Label> ipLabel;
 	std::unique_ptr<TextEditor> ipAddrLabel;
 

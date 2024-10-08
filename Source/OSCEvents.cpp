@@ -27,12 +27,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 OSCEventsNode::OSCEventsNode()
     : GenericProcessor("OSC Events")
 {
+    int port = DEFAULT_PORT;
+    String address = DEFAULT_OSC_ADDRESS;
+    
+    while(oscModule == nullptr)
+    {
+        oscModule = std::make_unique<OSCModule>(port, address, this);
 
-    addIntParameter(Parameter::GLOBAL_SCOPE, "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
-    addIntParameter(Parameter::GLOBAL_SCOPE, "Duration", "TTL Pulse Duration (ms)", 50, 0, 5000);
-    addStringParameter(Parameter::GLOBAL_SCOPE, "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
-    addBooleanParameter(Parameter::GLOBAL_SCOPE, "StimOn", "Determines whether events should be generated", true);
+        if(!oscModule->m_server->isBound())
+        {
+            LOGC("Tyring new port:", port + 1);
+            oscModule.reset(nullptr);
+            port++;
+        }
+    }
+}
 
+void OSCEventsNode::registerParameters()
+{
+    addIntParameter(Parameter::PROCESSOR_SCOPE, "Port", "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
+    addStringParameter(Parameter::PROCESSOR_SCOPE, "Address", "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
+    addIntParameter(Parameter::PROCESSOR_SCOPE, "Duration", "Duration", "TTL Pulse Duration (ms)", 100, 0, 2000);
+    addBooleanParameter(Parameter::PROCESSOR_SCOPE, "StimOn", "Stim", "Determines whether events should be generated", true);
+
+    if (oscModule)
+        getParameter("Port")->currentValue = oscModule->m_port;
 }
 
 AudioProcessorEditor *OSCEventsNode::createEditor()
@@ -171,30 +190,9 @@ void OSCEventsNode::updateSettings()
         ttlChan = new EventChannel(ttlChanSettings);
 
         eventChannels.add(ttlChan);
-        eventChannels.getLast()->addProcessor(processorInfo.get());
+        eventChannels.getLast()->addProcessor(this);
         settings[stream->getStreamId()]->eventChannelPtr = eventChannels.getLast();
     }
-
-    parameterValueChanged(getParameter("Duration"));
-    parameterValueChanged(getParameter("StimOn"));
-
-    int port = static_cast<IntParameter*>(getParameter("Port"))->getIntValue();
-    String address = getParameter("Address")->getValueAsString();
-    
-    while(oscModule == nullptr)
-    {
-        oscModule = std::make_unique<OSCModule>(port, address, this);
-
-        if(!oscModule->m_server->isBound())
-        {
-            LOGC("Tyring new port:", port + 1);
-            oscModule.reset(nullptr);
-            port++;
-        }
-    }
-
-    getParameter("Port")->currentValue = oscModule->m_port;
-    getEditor()->updateView();
 }
 
 void OSCEventsNode::triggerEvent(int ttlLine, bool state)
@@ -316,13 +314,9 @@ void OSCEventsNode::receiveMessage(const MessageData &message)
 
     lock.enter();
 
-    LOGD("Pushing message to queue");
-
     if(CoreServices::getAcquisitionStatus())
         oscModule->m_messageQueue->push(message);
 
-    LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
-   
     lock.exit();
 }
 
@@ -394,14 +388,14 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
     const IpEndpointName&)
 {
 
-    LOGD("Message received on ", receivedMessage.AddressPattern());
+    // LOGD("Message received on ", receivedMessage.AddressPattern());
 
     try
     {
 
 		if (String(receivedMessage.AddressPattern()).equalsIgnoreCase(m_oscAddress))
 		{
-            LOGD("Num arguments: ", receivedMessage.ArgumentCount());
+            // LOGD("Num arguments: ", receivedMessage.ArgumentCount());
 
             osc::ReceivedMessageArgumentStream args = receivedMessage.ArgumentStream();
 
@@ -413,9 +407,6 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
 
             if (receivedMessage.ArgumentCount() > 1)
                 args >> state;
-
-            LOGD("TTL Line: ", ttlLine);
-            LOGD("TTL State: ", state);
 
             if (ttlLine >= 0)
             {
