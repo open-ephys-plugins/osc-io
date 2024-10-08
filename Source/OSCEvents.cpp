@@ -23,21 +23,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "OSCEvents.h"
 #include "OSCEventsEditor.h"
 
-
 OSCEventsNode::OSCEventsNode()
-    : GenericProcessor("OSC Events")
+    : GenericProcessor ("OSC Events")
 {
     int port = DEFAULT_PORT;
     String address = DEFAULT_OSC_ADDRESS;
-    
-    while(oscModule == nullptr)
-    {
-        oscModule = std::make_unique<OSCModule>(port, address, this);
 
-        if(!oscModule->m_server->isBound())
+    while (oscModule == nullptr)
+    {
+        oscModule = std::make_unique<OSCModule> (port, address, this);
+
+        if (! oscModule->m_server->isBound())
         {
-            LOGC("Tyring new port:", port + 1);
-            oscModule.reset(nullptr);
+            LOGC ("Tyring new port:", port + 1);
+            oscModule.reset (nullptr);
             port++;
         }
     }
@@ -45,46 +44,46 @@ OSCEventsNode::OSCEventsNode()
 
 void OSCEventsNode::registerParameters()
 {
-    addIntParameter(Parameter::PROCESSOR_SCOPE, "Port", "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
-    addStringParameter(Parameter::PROCESSOR_SCOPE, "Address", "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
-    addIntParameter(Parameter::PROCESSOR_SCOPE, "Duration", "Duration", "TTL Pulse Duration (ms)", 100, 0, 2000);
-    addBooleanParameter(Parameter::PROCESSOR_SCOPE, "StimOn", "Stim", "Determines whether events should be generated", true);
+    addIntParameter (Parameter::PROCESSOR_SCOPE, "Port", "Port", "OSC Port Number", DEFAULT_PORT, 1024, 49151);
+    addStringParameter (Parameter::PROCESSOR_SCOPE, "Address", "Address", "OSC Address", DEFAULT_OSC_ADDRESS);
+    addIntParameter (Parameter::PROCESSOR_SCOPE, "Duration", "Duration", "TTL Pulse Duration (ms)", 100, 0, 2000);
+    addBooleanParameter (Parameter::PROCESSOR_SCOPE, "StimOn", "Stim", "Determines whether events should be generated", true);
 
     if (oscModule)
-        getParameter("Port")->currentValue = oscModule->m_port;
+        getParameter ("Port")->currentValue = oscModule->m_port;
 }
 
-AudioProcessorEditor *OSCEventsNode::createEditor()
+AudioProcessorEditor* OSCEventsNode::createEditor()
 {
-    editor = std::make_unique<OSCEventsEditor>(this);
+    editor = std::make_unique<OSCEventsEditor> (this);
     return editor.get();
 }
 
 int OSCEventsNode::getPort() const
 {
-    if(oscModule)
+    if (oscModule)
         return oscModule->m_port;
     else
         return DEFAULT_PORT;
 }
 
-void OSCEventsNode::setPort(int port)
+void OSCEventsNode::setPort (int port)
 {
     String oscAddress = getOscAddress();
 
-    if(getPort() != port)
+    if (getPort() != port)
     {
-        oscModule.reset(nullptr);
-        
-        oscModule = std::make_unique<OSCModule>(port, oscAddress, this);
+        oscModule.reset (nullptr);
 
-        if(!oscModule->m_server->isBound())
+        oscModule = std::make_unique<OSCModule> (port, oscAddress, this);
+
+        if (! oscModule->m_server->isBound())
         {
-            oscModule.reset(nullptr);
-            AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon,
-                                             "OSC Events [" + (String)getNodeId() + "]",
-                                             "Unable to bind to port: " + (String)port
-                                             + "\nPlease try a different one!");
+            oscModule.reset (nullptr);
+            AlertWindow::showMessageBoxAsync (AlertWindow::AlertIconType::WarningIcon,
+                                              "OSC Events [" + (String) getNodeId() + "]",
+                                              "Unable to bind to port: " + (String) port
+                                                  + "\nPlease try a different one!");
         }
     }
 }
@@ -92,26 +91,26 @@ void OSCEventsNode::setPort(int port)
 void OSCEventsNode::setOscAddress (String address)
 {
     int port = getPort();
-    
-    if(!getOscAddress().equalsIgnoreCase(address))
+
+    if (! getOscAddress().equalsIgnoreCase (address))
     {
-        oscModule.reset(nullptr);
-        
-        oscModule = std::make_unique<OSCModule>(port, address, this);
-        if(!oscModule->m_server->isBound())
+        oscModule.reset (nullptr);
+
+        oscModule = std::make_unique<OSCModule> (port, address, this);
+        if (! oscModule->m_server->isBound())
         {
-            oscModule.reset(nullptr);
-            AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon,
-                                             "OSC Events [" + (String)getNodeId() + "]",
-                                             "Unable to bind to port: " + (String)port
-                                             + "\nPlease try a different one!");
+            oscModule.reset (nullptr);
+            AlertWindow::showMessageBoxAsync (AlertWindow::AlertIconType::WarningIcon,
+                                              "OSC Events [" + (String) getNodeId() + "]",
+                                              "Unable to bind to port: " + (String) port
+                                                  + "\nPlease try a different one!");
         }
     }
 }
 
 String OSCEventsNode::getOscAddress() const
 {
-    if(oscModule)
+    if (oscModule)
         return oscModule->m_address;
     else
         return DEFAULT_OSC_ADDRESS;
@@ -132,34 +131,33 @@ int OSCEventsNode::getTTLDuration() const
     return m_pulseDurationMs;
 }
 
-void OSCEventsNode::setTTLDuration(int dur_ms)
+void OSCEventsNode::setTTLDuration (int dur_ms)
 {
     m_pulseDurationMs = dur_ms;
 }
 
-
-void OSCEventsNode::parameterValueChanged(Parameter *param)
+void OSCEventsNode::parameterValueChanged (Parameter* param)
 {
     auto trackingEditor = (OSCEventsEditor*) getEditor();
 
-    if (param->getName().equalsIgnoreCase("Port"))
+    if (param->getName().equalsIgnoreCase ("Port"))
     {
-        int port = static_cast<IntParameter*>(param)->getIntValue();
-        setPort(port);
+        int port = static_cast<IntParameter*> (param)->getIntValue();
+        setPort (port);
     }
-    else if(param->getName().equalsIgnoreCase("Address"))
+    else if (param->getName().equalsIgnoreCase ("Address"))
     {
         String address = param->getValueAsString();
-        setOscAddress( address);
+        setOscAddress (address);
     }
-    else if (param->getName().equalsIgnoreCase("Duration"))
+    else if (param->getName().equalsIgnoreCase ("Duration"))
     {
-        int duration = static_cast<IntParameter*>(param)->getIntValue();
-        setTTLDuration(duration);
+        int duration = static_cast<IntParameter*> (param)->getIntValue();
+        setTTLDuration (duration);
     }
-    else if (param->getName().equalsIgnoreCase("StimOn"))
+    else if (param->getName().equalsIgnoreCase ("StimOn"))
     {
-        bool isOn = static_cast<BooleanParameter*>(param)->getBoolValue();
+        bool isOn = static_cast<BooleanParameter*> (param)->getBoolValue();
         if (isOn)
         {
             startStimulation();
@@ -173,60 +171,58 @@ void OSCEventsNode::parameterValueChanged(Parameter *param)
 
 void OSCEventsNode::updateSettings()
 {
-
-    settings.update(getDataStreams());
+    settings.update (getDataStreams());
 
     for (auto stream : getDataStreams())
-    {        
+    {
         EventChannel* ttlChan;
-        EventChannel::Settings ttlChanSettings{
+        EventChannel::Settings ttlChanSettings {
             EventChannel::Type::TTL,
             "OSC Events stimulation output",
             "Triggers a TTL pulse whenever an incoming message is received",
             "osc.events",
-            getDataStream(stream->getStreamId())
+            getDataStream (stream->getStreamId())
         };
 
-        ttlChan = new EventChannel(ttlChanSettings);
+        ttlChan = new EventChannel (ttlChanSettings);
 
-        eventChannels.add(ttlChan);
-        eventChannels.getLast()->addProcessor(this);
+        eventChannels.add (ttlChan);
+        eventChannels.getLast()->addProcessor (this);
         settings[stream->getStreamId()]->eventChannelPtr = eventChannels.getLast();
     }
 }
 
-void OSCEventsNode::triggerEvent(int ttlLine, bool state)
-{   
-
+void OSCEventsNode::triggerEvent (int ttlLine, bool state)
+{
     int streamIndex = 0;
-    
+
     for (auto stream : getDataStreams())
-    {     
-        int64 startSampleNum = getFirstSampleNumberForBlock(stream->getStreamId());
-        int nSamples = getNumSamplesInBlock(stream->getStreamId());
+    {
+        int64 startSampleNum = getFirstSampleNumberForBlock (stream->getStreamId());
+        int nSamples = getNumSamplesInBlock (stream->getStreamId());
 
         if (m_pulseDurationMs > 0)
             state = true; // all events are "ON" events if pulse duration is set
 
         // Create and Send ON event
-        TTLEventPtr event = TTLEvent::createTTLEvent(eventChannels[streamIndex],
-                                                     startSampleNum,
-                                                     ttlLine,
-                                                     state);
+        TTLEventPtr event = TTLEvent::createTTLEvent (eventChannels[streamIndex],
+                                                      startSampleNum,
+                                                      ttlLine,
+                                                      state);
 
-        LOGD("Adding on event at ", startSampleNum);
-        
-        addEvent(event, 0);
+        LOGD ("Adding on event at ", startSampleNum);
+
+        addEvent (event, 0);
 
         if (m_pulseDurationMs > 0)
         {
             // Create OFF event
-            int eventDurationSamp = static_cast<int>(ceil(m_pulseDurationMs / 1000.0f * stream->getSampleRate()));
+            int eventDurationSamp = static_cast<int> (ceil (m_pulseDurationMs / 1000.0f * stream->getSampleRate()));
 
-            TTLEventPtr eventOff = TTLEvent::createTTLEvent(settings[stream->getStreamId()]->eventChannelPtr,
-                startSampleNum + eventDurationSamp,
-                ttlLine,
-                false);
+            TTLEventPtr eventOff = TTLEvent::createTTLEvent (settings[stream->getStreamId()]->eventChannelPtr,
+                                                             startSampleNum + eventDurationSamp,
+                                                             ttlLine,
+                                                             false);
 
             // Add or schedule turning-off event
             // We don't care whether there are other turning-offs scheduled to occur either in
@@ -236,46 +232,42 @@ void OSCEventsNode::triggerEvent(int ttlLine, bool state)
             // turned-on events will be turned off by this "turning-off" if they're not already off.
             if (eventDurationSamp < nSamples)
             {
-                addEvent(eventOff, eventDurationSamp);
+                addEvent (eventOff, eventDurationSamp);
             }
-                
+
             else
             {
-                LOGD("Adding off event at ", eventOff->getSampleNumber());
+                LOGD ("Adding off event at ", eventOff->getSampleNumber());
                 settings[stream->getStreamId()]->turnoffEvent = eventOff;
             }
-                
         }
 
         streamIndex++;
     }
 }
 
-void OSCEventsNode::process(AudioBuffer<float>& buffer)
+void OSCEventsNode::process (AudioBuffer<float>& buffer)
 {
-
-    if (!m_isOn || !oscModule)
+    if (! m_isOn || ! oscModule)
         return;
 
     // turn off event from previous buffer if necessary
     for (auto stream : getDataStreams())
     {
-
         auto settingsModule = settings[stream->getStreamId()];
 
-        if (!settingsModule->turnoffEvent)
+        if (! settingsModule->turnoffEvent)
             continue;
-        
-        int startSampleNum = getFirstSampleNumberForBlock(stream->getStreamId());
-        int nSamples = getNumSamplesInBlock(stream->getStreamId());
-        int turnoffOffset = jmax(0, (int)(settingsModule->turnoffEvent->getSampleNumber() - startSampleNum));
+
+        int startSampleNum = getFirstSampleNumberForBlock (stream->getStreamId());
+        int nSamples = getNumSamplesInBlock (stream->getStreamId());
+        int turnoffOffset = jmax (0, (int) (settingsModule->turnoffEvent->getSampleNumber() - startSampleNum));
 
         if (turnoffOffset < nSamples)
         {
-            addEvent(settingsModule->turnoffEvent, turnoffOffset);
+            addEvent (settingsModule->turnoffEvent, turnoffOffset);
             settingsModule->turnoffEvent = nullptr;
         }
-
     }
 
     lock.enter();
@@ -284,51 +276,48 @@ void OSCEventsNode::process(AudioBuffer<float>& buffer)
     {
         MessageData msg = oscModule->m_messageQueue->pop();
 
-        LOGD("Triggering event for message");
-        
-        triggerEvent(msg.ttlLine, msg.state);
+        LOGD ("Triggering event for message");
+
+        triggerEvent (msg.ttlLine, msg.state);
     }
 
     lock.exit();
-   
 }
 
 bool OSCEventsNode::startAcquisition()
 {
-    if(oscModule)
+    if (oscModule)
     {
-        LOGC("[OSC Events] Clearing message queue before starting acquisition")
+        LOGC ("[OSC Events] Clearing message queue before starting acquisition")
 
         lock.enter();
         oscModule->m_messageQueue->clear();
         lock.exit();
 
-        LOGD("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
+        LOGD ("Message QUEUE SIZE: ", oscModule->m_messageQueue->count());
     }
 
     return true;
 }
 
-void OSCEventsNode::receiveMessage(const MessageData &message)
+void OSCEventsNode::receiveMessage (const MessageData& message)
 {
-
     lock.enter();
 
-    if(CoreServices::getAcquisitionStatus())
-        oscModule->m_messageQueue->push(message);
+    if (CoreServices::getAcquisitionStatus())
+        oscModule->m_messageQueue->push (message);
 
     lock.exit();
 }
 
-
-void MessageQueue::push(const MessageData &message)
+void MessageQueue::push (const MessageData& message)
 {
-    queue.add(message);
+    queue.add (message);
 }
 
 MessageData MessageQueue::pop()
 {
-    return queue.removeAndReturn(0);
+    return queue.removeAndReturn (0);
 }
 
 bool MessageQueue::isEmpty()
@@ -341,36 +330,34 @@ void MessageQueue::clear()
     queue.clear();
 }
 
-int MessageQueue::count() 
+int MessageQueue::count()
 {
     return queue.size();
 }
 
-
-
-OSCServer::OSCServer(int port, 
-    String address, 
-    OSCEventsNode *processor)
-    : Thread("OscListener Thread"),
-       m_incomingPort(port), 
-       m_oscAddress(address),
-       m_processor(processor)
+OSCServer::OSCServer (int port,
+                      String address,
+                      OSCEventsNode* processor)
+    : Thread ("OscListener Thread"),
+      m_incomingPort (port),
+      m_oscAddress (address),
+      m_processor (processor)
 {
-    LOGC("Creating OSC server - Port:", port, " Address:", address);
+    LOGC ("Creating OSC server - Port:", port, " Address:", address);
 
     try
     {
-        m_listeningSocket = std::make_unique<UdpListeningReceiveSocket>(
-            IpEndpointName(IpEndpointName::ANY_ADDRESS, m_incomingPort),
+        m_listeningSocket = std::make_unique<UdpListeningReceiveSocket> (
+            IpEndpointName (IpEndpointName::ANY_ADDRESS, m_incomingPort),
             this);
 
-        CoreServices::sendStatusMessage("OSC Server ready!");
-        LOGC("OSC Server started!");
+        CoreServices::sendStatusMessage ("OSC Server ready!");
+        LOGC ("OSC Server started!");
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
-        CoreServices::sendStatusMessage("OSC Server failed to start!");
-        LOGE("Exception in creating OSC Server: ", String(e.what()));
+        CoreServices::sendStatusMessage ("OSC Server failed to start!");
+        LOGE ("Exception in creating OSC Server: ", String (e.what()));
     }
 
     // startThread();
@@ -380,21 +367,19 @@ OSCServer::~OSCServer()
 {
     // stop the OSC Listener thread running
     stop();
-    stopThread(-1);
-    waitForThreadToExit(-1);
+    stopThread (-1);
+    waitForThreadToExit (-1);
 }
 
-void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
-    const IpEndpointName&)
+void OSCServer::ProcessMessage (const osc::ReceivedMessage& receivedMessage,
+                                const IpEndpointName&)
 {
-
     // LOGD("Message received on ", receivedMessage.AddressPattern());
 
     try
     {
-
-		if (String(receivedMessage.AddressPattern()).equalsIgnoreCase(m_oscAddress))
-		{
+        if (String (receivedMessage.AddressPattern()).equalsIgnoreCase (m_oscAddress))
+        {
             // LOGD("Num arguments: ", receivedMessage.ArgumentCount());
 
             osc::ReceivedMessageArgumentStream args = receivedMessage.ArgumentStream();
@@ -413,33 +398,32 @@ void OSCServer::ProcessMessage(const osc::ReceivedMessage& receivedMessage,
                 MessageData messageData;
 
                 messageData.ttlLine = ttlLine;
-                messageData.state = bool(state);
+                messageData.state = bool (state);
 
-                m_processor->receiveMessage(messageData);
+                m_processor->receiveMessage (messageData);
             }
-		}
-        
+        }
     }
-    catch (osc::Exception &e)
+    catch (osc::Exception& e)
     {
         // any parsing errors such as unexpected argument types, or
         // missing arguments get thrown as exceptions.
-        LOGE("error while parsing message: ", String(receivedMessage.AddressPattern()), ": ", String(e.what()));
+        LOGE ("error while parsing message: ", String (receivedMessage.AddressPattern()), ": ", String (e.what()));
     }
 }
 
 void OSCServer::run()
-{    
+{
     // Start the oscpack OSC Listener Thread
     // TODO (FIX): Hits assertion in the JUCE::Thread class bec6ause listener's
     // 'Run()' method is throwing expection in some cases.
-    if(m_listeningSocket)
-            m_listeningSocket->Run();
+    if (m_listeningSocket)
+        m_listeningSocket->Run();
 }
 
 bool OSCServer::isBound()
 {
-    if(m_listeningSocket)
+    if (m_listeningSocket)
         return m_listeningSocket->IsBound();
     else
         return false;
@@ -448,12 +432,11 @@ bool OSCServer::isBound()
 void OSCServer::stop()
 {
     // Stop the oscpack OSC Listener Thread
-    if (!isThreadRunning())
+    if (! isThreadRunning())
     {
         return;
     }
 
-    if(m_listeningSocket)
+    if (m_listeningSocket)
         m_listeningSocket->AsynchronousBreak();
 }
-

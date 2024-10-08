@@ -30,17 +30,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_PORT 27020
 #define DEFAULT_OSC_ADDRESS "/ttl"
 
-#include "oscpack/osc/OscOutboundPacketStream.h"
 #include "oscpack/ip/IpEndpointName.h"
-#include "oscpack/osc/OscReceivedElements.h"
-#include "oscpack/osc/OscPacketListener.h"
 #include "oscpack/ip/UdpSocket.h"
+#include "oscpack/osc/OscOutboundPacketStream.h"
+#include "oscpack/osc/OscPacketListener.h"
+#include "oscpack/osc/OscReceivedElements.h"
 
-struct MessageData {
-	int ttlLine;
-	bool state;
+struct MessageData
+{
+    int ttlLine;
+    bool state;
 };
-
 
 /** 
 	Stores incoming messages in a queue
@@ -48,30 +48,29 @@ struct MessageData {
 class MessageQueue
 {
 public:
+    /** Constructor */
+    MessageQueue() {}
 
-	/** Constructor */
-	MessageQueue() { }
+    /** Destructor */
+    ~MessageQueue() {}
 
-	/** Destructor */
-	~MessageQueue() { }
+    /** Adds a message to the queue */
+    void push (const MessageData& message);
 
-	/** Adds a message to the queue */
-	void push(const MessageData &message);
+    /** Removes a message from the queue*/
+    MessageData pop();
 
-	/** Removes a message from the queue*/
-	MessageData pop();
+    /** True if the queue is empty*/
+    bool isEmpty();
 
-	/** True if the queue is empty*/
-	bool isEmpty();
+    /** Clears the queue*/
+    void clear();
 
-	/** Clears the queue*/
-	void clear();
-
-	/** Returns the number of messages available*/
-	int count();
+    /** Returns the number of messages available*/
+    int count();
 
 private:
-	Array<MessageData> queue;
+    Array<MessageData> queue;
 };
 
 class OSCEventsNode;
@@ -82,39 +81,37 @@ class OSCEventsNode;
 
 */
 class OSCServer : public osc::OscPacketListener,
-			      public Thread
+                  public Thread
 {
 public:
+    /** Constructor */
+    OSCServer (int port, String address, OSCEventsNode* processor);
 
-	/** Constructor */
-	OSCServer(int port, String address, OSCEventsNode* processor);
+    /** Destructor*/
+    ~OSCServer();
 
-	/** Destructor*/
-	~OSCServer();
+    /** Run thread */
+    void run();
 
-	/** Run thread */
-	void run();
+    /** Stop listening */
+    void stop();
 
-	/** Stop listening */
-	void stop();
-
-	/** Check if server was bound successfully*/
-	bool isBound();
+    /** Check if server was bound successfully*/
+    bool isBound();
 
 protected:
-	/** OscPacketListener method*/
-	virtual void ProcessMessage(const osc::ReceivedMessage &m, const IpEndpointName &);
+    /** OscPacketListener method*/
+    virtual void ProcessMessage (const osc::ReceivedMessage& m, const IpEndpointName&);
 
 private:
+    /** Copy constructor */
+    OSCServer (OSCServer const&);
 
-	/** Copy constructor */
-	OSCServer(OSCServer const &);
+    int m_incomingPort;
+    String m_oscAddress;
 
-	int m_incomingPort;
-	String m_oscAddress;
-
-	std::unique_ptr<UdpListeningReceiveSocket> m_listeningSocket;
-	OSCEventsNode* m_processor;
+    std::unique_ptr<UdpListeningReceiveSocket> m_listeningSocket;
+    OSCEventsNode* m_processor;
 };
 
 /** 
@@ -125,116 +122,111 @@ private:
 class OSCModule
 {
 public:
-	
-	/** Constructor */
-	OSCModule(int port, String address, OSCEventsNode* processor)
-		:m_port(port), m_address(address)
-	{
-		m_messageQueue = std::make_unique<MessageQueue>();
-		m_server = std::make_unique<OSCServer>(port, address, processor);
-		if(m_server->isBound())
-			m_server->startThread();
-	}
+    /** Constructor */
+    OSCModule (int port, String address, OSCEventsNode* processor)
+        : m_port (port), m_address (address)
+    {
+        m_messageQueue = std::make_unique<MessageQueue>();
+        m_server = std::make_unique<OSCServer> (port, address, processor);
+        if (m_server->isBound())
+            m_server->startThread();
+    }
 
-	/** Destructor */
-	~OSCModule() {}
+    /** Destructor */
+    ~OSCModule() {}
 
-	friend std::ostream &operator<<(std::ostream &, const OSCModule&);
+    friend std::ostream& operator<< (std::ostream&, const OSCModule&);
 
-	int m_port = DEFAULT_PORT;
-	String m_address = String(DEFAULT_OSC_ADDRESS);
+    int m_port = DEFAULT_PORT;
+    String m_address = String (DEFAULT_OSC_ADDRESS);
 
-	std::unique_ptr<MessageQueue> m_messageQueue;
-	std::unique_ptr<OSCServer> m_server;
+    std::unique_ptr<MessageQueue> m_messageQueue;
+    std::unique_ptr<OSCServer> m_server;
 
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OSCModule);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCModule);
 };
 
 /** Holds settings for one stream's event channel */
 class OSCEventsNodeSettings
 {
 public:
-	/** Constructor -- sets default values*/
-	OSCEventsNodeSettings() :
-		eventChannelPtr(nullptr), turnoffEvent(nullptr) { }
+    /** Constructor -- sets default values*/
+    OSCEventsNodeSettings() : eventChannelPtr (nullptr), turnoffEvent (nullptr) {}
 
-	/** Destructor*/
-	~OSCEventsNodeSettings() { }
+    /** Destructor*/
+    ~OSCEventsNodeSettings() {}
 
-	/** Parameters */
-	EventChannel* eventChannelPtr;
-	TTLEventPtr turnoffEvent; // holds a turnoff event that must be added in a later buffer
+    /** Parameters */
+    EventChannel* eventChannelPtr;
+    TTLEventPtr turnoffEvent; // holds a turnoff event that must be added in a later buffer
 };
-
 
 class OSCEventsNode : public GenericProcessor
 {
-
 public:
-	/** The class constructor, used to initialize any members. */
-	OSCEventsNode();
+    /** The class constructor, used to initialize any members. */
+    OSCEventsNode();
 
-	/** The class destructor, used to deallocate memory */
-	~OSCEventsNode() {}
+    /** The class destructor, used to deallocate memory */
+    ~OSCEventsNode() {}
 
-	/** Register the parameters of the processor */
-	void registerParameters() override;
+    /** Register the parameters of the processor */
+    void registerParameters() override;
 
-	/** If the processor has a custom editor, this method must be defined to instantiate it. */
-	AudioProcessorEditor *createEditor() override;
+    /** If the processor has a custom editor, this method must be defined to instantiate it. */
+    AudioProcessorEditor* createEditor() override;
 
-	/** Respond to parameter value changes */
-	void parameterValueChanged(Parameter *param) override;
+    /** Respond to parameter value changes */
+    void parameterValueChanged (Parameter* param) override;
 
-	/** Called every time the settings of an upstream plugin are changed.
+    /** Called every time the settings of an upstream plugin are changed.
 		Allows the processor to handle variations in the channel configuration or any other parameter
 		passed through signal chain. The processor can use this function to modify channel objects that
 		will be passed to downstream plugins. */
-	void updateSettings() override;
+    void updateSettings() override;
 
-	/** Defines the functionality of the processor.
+    /** Defines the functionality of the processor.
 		The process method is called every time a new data buffer is available.
 		Visualizer plugins typically use this method to send data to the canvas for display purposes */
-	void process(AudioBuffer<float> &buffer) override;
+    void process (AudioBuffer<float>& buffer) override;
 
-	bool startAcquisition() override;
+    bool startAcquisition() override;
 
-	// receives a message from the osc server
-	void receiveMessage(const MessageData &message);
+    // receives a message from the osc server
+    void receiveMessage (const MessageData& message);
 
-	// Setter-Getters
+    // Setter-Getters
 
-	int getPort() const;
-	void setPort (int port);
+    int getPort() const;
+    void setPort (int port);
 
-	String getOscAddress() const;
-	void setOscAddress(String address);
+    String getOscAddress() const;
+    void setOscAddress (String address);
 
-	int getTTLDuration() const;
-	void setTTLDuration(int duration_ms);
+    int getTTLDuration() const;
+    void setTTLDuration (int duration_ms);
 
-	/** Enables TTL output*/
-	void startStimulation();
+    /** Enables TTL output*/
+    void startStimulation();
 
-	/** Disables TTL output*/
+    /** Disables TTL output*/
     void stopStimulation();
 
 private:
+    CriticalSection lock;
 
-	CriticalSection lock;
+    // Stimulation parameters
+    bool m_isOn = true;
+    int m_pulseDurationMs = 50;
 
-	// Stimulation parameters
-	bool m_isOn = true;
-	int m_pulseDurationMs = 50;
+    std::unique_ptr<OSCModule> oscModule;
 
-	std::unique_ptr<OSCModule> oscModule;
+    StreamSettings<OSCEventsNodeSettings> settings;
 
-	StreamSettings<OSCEventsNodeSettings> settings;
+    /** Triggers an event on the specified TTL line*/
+    void triggerEvent (int line, bool state);
 
-	/** Triggers an event on the specified TTL line*/
-	void triggerEvent(int line, bool state);
-
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OSCEventsNode);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCEventsNode);
 };
 
 #endif

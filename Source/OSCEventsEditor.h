@@ -30,18 +30,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class OSCEventsEditor : public GenericEditor
 {
 public:
-	/** Constructor */
-	OSCEventsEditor(GenericProcessor *parentNode);
+    /** Constructor */
+    OSCEventsEditor (GenericProcessor* parentNode);
 
-	/** Destructor */
-	~OSCEventsEditor() {}
+    /** Destructor */
+    ~OSCEventsEditor() {}
 
 private:
-	std::unique_ptr<Label> ipLabel;
-	std::unique_ptr<TextEditor> ipAddrLabel;
+    std::unique_ptr<Label> ipLabel;
+    std::unique_ptr<TextEditor> ipAddrLabel;
 
-	/** Generates an assertion if this class leaks */
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OSCEventsEditor);
+    /** Generates an assertion if this class leaks */
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCEventsEditor);
 };
 
 #endif // TrackingNodeEDITOR_H_DEFINED

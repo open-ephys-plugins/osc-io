@@ -19,25 +19,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <vector>
 #include "OSCEventsEditor.h"
 #include "OSCEvents.h"
+#include <vector>
 
-OSCEventsEditor::OSCEventsEditor(GenericProcessor *parentNode)
-    : GenericEditor(parentNode)
+OSCEventsEditor::OSCEventsEditor (GenericProcessor* parentNode)
+    : GenericEditor (parentNode)
 {
     desiredWidth = 160;
 
-    ipLabel = std::make_unique<Label>("IP Label");
-    ipLabel->setText("IP: " + IPAddress::getLocalAddress().toString() , dontSendNotification);
+    ipLabel = std::make_unique<Label> ("IP Label");
+    ipLabel->setText ("IP: " + IPAddress::getLocalAddress().toString(), dontSendNotification);
     ipLabel->setFont (FontOptions ("Inter", "Regular", 14.0f));
-    ipLabel->setBounds(15, 26, 130, 14);
-    addAndMakeVisible(ipLabel.get());
+    ipLabel->setBounds (15, 26, 130, 14);
+    addAndMakeVisible (ipLabel.get());
 
-    addTextBoxParameterEditor(Parameter::PROCESSOR_SCOPE, "Port", 15, 42);
-    addTextBoxParameterEditor(Parameter::PROCESSOR_SCOPE, "Address", 15, 64);
-    addBoundedValueParameterEditor(Parameter::PROCESSOR_SCOPE, "Duration", 15, 86);
-    addToggleParameterEditor(Parameter::PROCESSOR_SCOPE, "StimOn", 15, 108);
+    addTextBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "Port", 15, 42);
+    addTextBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "Address", 15, 64);
+    addBoundedValueParameterEditor (Parameter::PROCESSOR_SCOPE, "Duration", 15, 86);
+    addToggleParameterEditor (Parameter::PROCESSOR_SCOPE, "StimOn", 15, 108);
 
     for (auto ed : parameterEditors)
     {
