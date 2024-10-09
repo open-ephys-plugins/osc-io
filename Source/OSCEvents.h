@@ -30,12 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_PORT 27020
 #define DEFAULT_OSC_ADDRESS "/ttl"
 
-#include "oscpack/ip/IpEndpointName.h"
-#include "oscpack/ip/UdpSocket.h"
-#include "oscpack/osc/OscOutboundPacketStream.h"
-#include "oscpack/osc/OscPacketListener.h"
-#include "oscpack/osc/OscReceivedElements.h"
-
 struct MessageData
 {
     int ttlLine;
@@ -75,73 +69,28 @@ private:
 
 class OSCEventsNode;
 
-/*
- 
-	An OSC UDP Server running its own thread
-
-*/
-class OSCServer : public osc::OscPacketListener,
-                  public Thread
-{
-public:
-    /** Constructor */
-    OSCServer (int port, String address, OSCEventsNode* processor);
-
-    /** Destructor*/
-    ~OSCServer();
-
-    /** Run thread */
-    void run();
-
-    /** Stop listening */
-    void stop();
-
-    /** Check if server was bound successfully*/
-    bool isBound();
-
-protected:
-    /** OscPacketListener method*/
-    virtual void ProcessMessage (const osc::ReceivedMessage& m, const IpEndpointName&);
-
-private:
-    /** Copy constructor */
-    OSCServer (OSCServer const&);
-
-    int m_incomingPort;
-    String m_oscAddress;
-
-    std::unique_ptr<UdpListeningReceiveSocket> m_listeningSocket;
-    OSCEventsNode* m_processor;
-};
-
 /** 
 	
-	Contains a message queue and an OSC server
+	Contains a message queue and an OSC Receiver
 
 */
-class OSCModule
+class OSCModule : private OSCReceiver, private OSCReceiver::ListenerWithOSCAddress<OSCReceiver::RealtimeCallback>
 {
 public:
     /** Constructor */
-    OSCModule (int port, String address, OSCEventsNode* processor)
-        : m_port (port), m_address (address)
-    {
-        m_messageQueue = std::make_unique<MessageQueue>();
-        m_server = std::make_unique<OSCServer> (port, address, processor);
-        if (m_server->isBound())
-            m_server->startThread();
-    }
+    OSCModule (int port, String address, OSCEventsNode* processor);
 
     /** Destructor */
     ~OSCModule() {}
 
-    friend std::ostream& operator<< (std::ostream&, const OSCModule&);
+    void oscMessageReceived (const juce::OSCMessage& message) override;
 
     int m_port = DEFAULT_PORT;
     String m_address = String (DEFAULT_OSC_ADDRESS);
+    bool isConnected = false;
 
     std::unique_ptr<MessageQueue> m_messageQueue;
-    std::unique_ptr<OSCServer> m_server;
+    OSCEventsNode* m_processor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OSCModule);
 };

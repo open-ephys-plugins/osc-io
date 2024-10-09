@@ -33,7 +33,7 @@ OSCEventsNode::OSCEventsNode()
     {
         oscModule = std::make_unique<OSCModule> (port, address, this);
 
-        if (! oscModule->m_server->isBound())
+        if (! oscModule->isConnected)
         {
             LOGC ("Tyring new port:", port + 1);
             oscModule.reset (nullptr);
@@ -77,7 +77,7 @@ void OSCEventsNode::setPort (int port)
 
         oscModule = std::make_unique<OSCModule> (port, oscAddress, this);
 
-        if (! oscModule->m_server->isBound())
+        if (! oscModule->isConnected)
         {
             oscModule.reset (nullptr);
             AlertWindow::showMessageBoxAsync (AlertWindow::AlertIconType::WarningIcon,
@@ -97,7 +97,7 @@ void OSCEventsNode::setOscAddress (String address)
         oscModule.reset (nullptr);
 
         oscModule = std::make_unique<OSCModule> (port, address, this);
-        if (! oscModule->m_server->isBound())
+        if (! oscModule->isConnected)
         {
             oscModule.reset (nullptr);
             AlertWindow::showMessageBoxAsync (AlertWindow::AlertIconType::WarningIcon,
@@ -335,108 +335,53 @@ int MessageQueue::count()
     return queue.size();
 }
 
-OSCServer::OSCServer (int port,
-                      String address,
-                      OSCEventsNode* processor)
-    : Thread ("OscListener Thread"),
-      m_incomingPort (port),
-      m_oscAddress (address),
-      m_processor (processor)
+OSCModule::OSCModule (int port, String address, OSCEventsNode* processor)
+    : m_port (port), m_address (address), m_processor (processor), isConnected (false)
 {
-    LOGC ("Creating OSC server - Port:", port, " Address:", address);
+    m_messageQueue = std::make_unique<MessageQueue>();
 
-    try
+    if (! connect (port))
     {
-        m_listeningSocket = std::make_unique<UdpListeningReceiveSocket> (
-            IpEndpointName (IpEndpointName::ANY_ADDRESS, m_incomingPort),
-            this);
-
-        CoreServices::sendStatusMessage ("OSC Server ready!");
-        LOGC ("OSC Server started!");
-    }
-    catch (const std::exception& e)
-    {
-        CoreServices::sendStatusMessage ("OSC Server failed to start!");
-        LOGE ("Exception in creating OSC Server: ", String (e.what()));
-    }
-
-    // startThread();
-}
-
-OSCServer::~OSCServer()
-{
-    // stop the OSC Listener thread running
-    stop();
-    stopThread (-1);
-    waitForThreadToExit (-1);
-}
-
-void OSCServer::ProcessMessage (const osc::ReceivedMessage& receivedMessage,
-                                const IpEndpointName&)
-{
-    // LOGD("Message received on ", receivedMessage.AddressPattern());
-
-    try
-    {
-        if (String (receivedMessage.AddressPattern()).equalsIgnoreCase (m_oscAddress))
-        {
-            // LOGD("Num arguments: ", receivedMessage.ArgumentCount());
-
-            osc::ReceivedMessageArgumentStream args = receivedMessage.ArgumentStream();
-
-            int ttlLine = -1;
-            int state = true;
-
-            if (receivedMessage.ArgumentCount() > 0)
-                args >> ttlLine;
-
-            if (receivedMessage.ArgumentCount() > 1)
-                args >> state;
-
-            if (ttlLine >= 0)
-            {
-                MessageData messageData;
-
-                messageData.ttlLine = ttlLine;
-                messageData.state = bool (state);
-
-                m_processor->receiveMessage (messageData);
-            }
-        }
-    }
-    catch (osc::Exception& e)
-    {
-        // any parsing errors such as unexpected argument types, or
-        // missing arguments get thrown as exceptions.
-        LOGE ("error while parsing message: ", String (receivedMessage.AddressPattern()), ": ", String (e.what()));
-    }
-}
-
-void OSCServer::run()
-{
-    // Start the oscpack OSC Listener Thread
-    // TODO (FIX): Hits assertion in the JUCE::Thread class bec6ause listener's
-    // 'Run()' method is throwing expection in some cases.
-    if (m_listeningSocket)
-        m_listeningSocket->Run();
-}
-
-bool OSCServer::isBound()
-{
-    if (m_listeningSocket)
-        return m_listeningSocket->IsBound();
-    else
-        return false;
-}
-
-void OSCServer::stop()
-{
-    // Stop the oscpack OSC Listener Thread
-    if (! isThreadRunning())
-    {
+        LOGE ("Failed to bind to port: ", port);
         return;
     }
 
-    if (m_listeningSocket)
-        m_listeningSocket->AsynchronousBreak();
+    LOGC ("Creating OSC receiver - Port:", port, " Address:", address);
+
+    isConnected = true;
+    addListener (this, address);
+}
+
+void OSCModule::oscMessageReceived (const juce::OSCMessage& message)
+{
+    int ttlLine = -1;
+    int state = true;
+
+    if (message.size() == 2)
+    {
+        if (message[0].isInt32())
+            ttlLine = message[0].getInt32();
+        else if (message[0].isString())
+            ttlLine = message[0].getString().getIntValue();
+
+        if (message[1].isInt32())
+            state = message[1].getInt32();
+        else if (message[1].isString())
+            state = message[1].getString().getIntValue();
+
+        if (ttlLine >= 0 && ttlLine < 256
+            && (state == 0 || state == 1))
+        {
+            MessageData messageData;
+
+            messageData.ttlLine = ttlLine;
+            messageData.state = bool (state);
+
+            m_processor->receiveMessage (messageData);
+
+            return;
+        }
+    }
+
+    LOGE ("Invalid message received from OSC server");
 }
