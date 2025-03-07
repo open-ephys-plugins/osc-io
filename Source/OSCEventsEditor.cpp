@@ -29,10 +29,21 @@ OSCEventsEditor::OSCEventsEditor (GenericProcessor* parentNode)
     desiredWidth = 160;
 
     ipLabel = std::make_unique<Label> ("IP Label");
-    ipLabel->setText ("IP: " + IPAddress::getLocalAddress().toString(), dontSendNotification);
+    ipLabel->setText ("IP:", dontSendNotification);
     ipLabel->setFont (FontOptions ("Inter", "Regular", 14.0f));
-    ipLabel->setBounds (15, 26, 130, 14);
+    ipLabel->setBounds (15, 26, 25, 14);
     addAndMakeVisible (ipLabel.get());
+
+    ipAddrLabel = std::make_unique<TextEditor> ("IP Address");
+    ipAddrLabel->setMultiLine (false);
+    ipAddrLabel->setReadOnly (true);
+    ipAddrLabel->setCaretVisible (false);
+    ipAddrLabel->setFont (FontOptions (13.0f));
+    ipAddrLabel->setText (IPAddress::getLocalAddress().toString(), dontSendNotification);
+    ipAddrLabel->setBounds (37, 25, 110, 14);
+    ipAddrLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+    ipAddrLabel->setColour (TextEditor::outlineColourId, Colour (0x00000000));
+    addAndMakeVisible (ipAddrLabel.get());
 
     addTextBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "Port", 15, 42);
     addTextBoxParameterEditor (Parameter::PROCESSOR_SCOPE, "Address", 15, 64);
@@ -43,4 +54,9 @@ OSCEventsEditor::OSCEventsEditor (GenericProcessor* parentNode)
     {
         ed->setSize (ed->getWidth(), 17);
     }
+}
+
+void OSCEventsEditor::lookAndFeelChanged()
+{
+    ipAddrLabel->applyColourToAllText (findColour (ThemeColours::defaultText));
 }

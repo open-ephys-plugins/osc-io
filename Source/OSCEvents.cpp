@@ -288,7 +288,7 @@ bool OSCEventsNode::startAcquisition()
 {
     if (oscModule)
     {
-        LOGC ("[OSC Events] Clearing message queue before starting acquisition")
+        LOGC ("Clearing message queue before starting acquisition")
 
         lock.enter();
         oscModule->m_messageQueue->clear();

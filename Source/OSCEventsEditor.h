@@ -36,6 +36,8 @@ public:
     /** Destructor */
     ~OSCEventsEditor() {}
 
+    void lookAndFeelChanged() override;
+
 private:
     std::unique_ptr<Label> ipLabel;
     std::unique_ptr<TextEditor> ipAddrLabel;
